@@ -2,9 +2,9 @@ import os
 import json
 import queue
 import sounddevice as sd
+import vosk
 from vosk import Model, KaldiRecognizer
 import pyttsx3
-import webbrowser
 import pyautogui
 import subprocess
 import time
@@ -34,10 +34,15 @@ def speak(text):
         engine.say(text)
         engine.runAndWait()
 
-# ---------- VOSK МОДЕЛЬ ----------
-
-model = Model("Model")  # папка с моделью
-recognizer = KaldiRecognizer(model, 16000)
+# ---------- VOSK МОДЕЛЬ ---------
+if SYSTEM == "Darwin":
+    model = Model("model")  # папка с моделью
+    recognizer = KaldiRecognizer(model, 16000)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__)) 
+    model_path = os.path.join(BASE_DIR, "model","model")
+    vosk_model = vosk.Model(model_path)
+    recognizer = vosk.KaldiRecognizer(vosk_model, 16000)
 
 audio_queue = queue.Queue()
 
@@ -45,21 +50,21 @@ def callback(indata, frames, time, status):
     audio_queue.put(bytes(indata))
 
 # ---------- Открытие программ ----------
-#def open_app(name):
-#   if "youtube" in name:
-#        webbrowser.open("https://youtube.com")
-#
-#   elif "google" in name:
-#        webbrowser.open("https://google.com")
-#
-#    elif "браузер" in name:
-#        webbrowser.open("https://google.com")
+def open_app(name):
+    if "youtube" in name:
+        webbrowser.open("https://youtube.com")
 
-#    elif "блокнот" in name:
-#        if SYSTEM == "Windows":
-#            os.system("notepad")
-#        elif SYSTEM == "Darwin":
-#            os.system("open -a TextEdit")
+    #elif "google" in name:
+    #    webbrowser.open("https://google.com")
+
+    elif "браузер" in name:
+        webbrowser.open("https://google.com")
+
+    elif "блокнот" in name:
+        if SYSTEM == "Windows":
+            os.system("notepad")
+        elif SYSTEM == "Darwin":
+            os.system("open -a TextEdit")
 
 # ----------- Закрытие приложений ----------
 
@@ -90,7 +95,10 @@ def run_command(command):
         
     elif "закрой браузер" in command:
         speak("Закрываю браузер")
-        close_app("Google Chrome")
+        if open_app == "Google Chrome":
+            close_app("Google Chrome")
+        elif open_app == "Yandex":
+            close_app("Yandex")
 
     elif "открой ютуб" in command:
         speak("Открываю ютуб")
@@ -106,7 +114,7 @@ def run_command(command):
         speak("Пишу текст")
 
     elif "сделай скриншот" in command:
-            folder = os.path.expanduser("screenshots")
+            folder = os.path.expanduser("PyAI-main\screenshots")
             os.makedirs(folder, exist_ok=True)
 
             filename = f"screen_{datetime.datetime.now().strftime('%H-%M-%S')}.png"
@@ -142,7 +150,7 @@ with sd.RawInputStream(samplerate=16000, blocksize=8000,
     while True:
         data = audio_queue.get()
 
-        if recognizer.AcceptWaveform(data):
+        if recognizer.AcceptWaveform(data):  # ✅ Правильно
             result = json.loads(recognizer.Result())
             text = result.get("text", "").strip()
 
