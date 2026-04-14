@@ -36,7 +36,7 @@ def speak(text):
 
 # ---------- VOSK МОДЕЛЬ ----------
 
-model = Model("Models/vosk-model-small-ru-0.22")  # папка с моделью
+model = Model("Model")  # папка с моделью
 recognizer = KaldiRecognizer(model, 16000)
 
 audio_queue = queue.Queue()
@@ -45,21 +45,21 @@ def callback(indata, frames, time, status):
     audio_queue.put(bytes(indata))
 
 # ---------- Открытие программ ----------
-def open_app(name):
-    if "youtube" in name:
-        webbrowser.open("https://youtube.com")
+#def open_app(name):
+#   if "youtube" in name:
+#        webbrowser.open("https://youtube.com")
+#
+#   elif "google" in name:
+#        webbrowser.open("https://google.com")
+#
+#    elif "браузер" in name:
+#        webbrowser.open("https://google.com")
 
-    elif "google" in name:
-        webbrowser.open("https://google.com")
-
-    elif "браузер" in name:
-        webbrowser.open("https://google.com")
-
-    elif "блокнот" in name:
-        if SYSTEM == "Windows":
-            os.system("notepad")
-        elif SYSTEM == "Darwin":
-            os.system("open -a TextEdit")
+#    elif "блокнот" in name:
+#        if SYSTEM == "Windows":
+#            os.system("notepad")
+#        elif SYSTEM == "Darwin":
+#            os.system("open -a TextEdit")
 
 # ----------- Закрытие приложений ----------
 
