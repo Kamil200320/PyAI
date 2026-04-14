@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../VM"
+		},
+		{
+			"path": "../Test"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}

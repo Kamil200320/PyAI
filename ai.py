@@ -1,0 +1,107 @@
+import os
+import json
+import queue
+import sounddevice as sd
+from vosk import Model, KaldiRecognizer
+import pyttsx3
+import webbrowser
+import pyautogui
+import subprocess
+import time
+import datetime
+
+# ---------- ГОЛОС ----------
+def speak(text):
+    print("AI:", text)
+    subprocess.run(["say", text])
+
+# ---------- VOSK МОДЕЛЬ ----------
+model = Model("Models/vosk-model-small-ru-0.22")  # папка с моделью
+recognizer = KaldiRecognizer(model, 16000)
+
+audio_queue = queue.Queue()
+
+def callback(indata, frames, time, status):
+    audio_queue.put(bytes(indata))
+
+# ---------- КОМАНДЫ ----------
+
+def close_app(app_name):
+    subprocess.run([
+        "osascript",
+        "-e",
+        f'tell application "{app_name}" to quit'
+    ])
+
+def run_command(command):
+    print("КОМАНДА ПОЛУЧЕНА:", command)
+    
+
+    if "открой браузер" in command or "google" in command:
+        speak("Открываю браузер")
+        webbrowser.open("https://google.com")
+        
+    elif "закрой браузер" in command:
+        speak("Закрываю браузер")
+        close_app("Google Chrome")
+
+    elif "открой ютуб" in command:
+        speak("Открываю ютуб")
+        webbrowser.open("https://youtube.com")
+
+    elif "закрой ютуб" in command:
+        speak("Закрываю ютуб")
+        close_app("YouTude")
+
+    elif "текст" in command:
+        text = command.replace("напиши", "")
+        pyautogui.write(text)
+        speak("Пишу текст")
+
+    elif "сделай скриншот" in command:
+            folder = os.path.expanduser("screenshots")
+            os.makedirs(folder, exist_ok=True)
+
+            filename = f"screen_{datetime.datetime.now().strftime('%H-%M-%S')}.png"
+            path = os.path.join(folder, filename)
+            img = pyautogui.screenshot()
+            img.save(path)
+
+            print("Сохраняю в:", path)
+            print("Папка существует:", os.path.exists(folder))
+
+            try:
+                pyautogui.screenshot(path)
+                speak("Скриншот сохранён")
+            except Exception as e:
+                print("Ошибка скриншота:", e)
+                speak("Не удалось сделать скриншот")
+
+    elif "стоп" in command or "выход" in command:
+        speak("Выключаюсь")
+        exit()
+
+    else:
+        pass
+
+
+# ---------- ЗАПУСК ----------
+speak("Ассистент запущен")
+
+with sd.RawInputStream(samplerate=16000, blocksize=8000,
+                        dtype='int16', channels=1,
+                        callback=callback):
+
+    while True:
+        data = audio_queue.get()
+
+        if recognizer.AcceptWaveform(data):
+            result = json.loads(recognizer.Result())
+            text = result.get("text", "").strip()
+
+            if text == "":
+                continue  # 👈 ПРОСТО ПРОПУСКАЕМ ТИШИНУ
+
+            print("Ты:", text)
+            run_command(text)
+            time.sleep(1)
